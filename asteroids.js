@@ -273,7 +273,7 @@ Projectile.prototype.refresh = function(c) {
 Particle = function(game, position, velocity) {
 	this.super(game.canvas, game.particle_mass(), position, velocity, 0)
 	this.life = game.particle_life;
-	game.objects.push(this)
+	game.objects.push(this);
 }
 extend(Particle, Mass);
 Particle.prototype.update = function() {
