@@ -121,6 +121,9 @@ Mass.prototype.update = function() {
 	if(this.angle > 2 * Math.PI) {
 		this.angle -= 2 * Math.PI;
 	}
+	if(this.angle < 0) {
+		this.angle += 2 * Math.PI;
+	}
 }
 
 Mass.prototype.refresh = function(c) {
@@ -167,8 +170,8 @@ Asteroid.prototype.refresh = function(c) {
 
 // THE SHIP===========================
 
-Ship = function(game, canvas) {
-	this.super(canvas, 1000, {x: canvas.width / 2, y: canvas.height / 2}, {x: 0, y: 0}, 0)
+Ship = function(game) {
+	this.super(game.canvas, 1000, {x: game.canvas.width / 2, y: game.canvas.height / 2}, {x: 0, y: 0}, 0)
 	this.game = game;
 
 	this.mainThruster = false;
@@ -186,7 +189,6 @@ Ship = function(game, canvas) {
 	this.projectile_mass = 100;
 	this.projectile_life = 400;
 	this.projectile_impact = 1;
-	this.projectiles = [];
 }
 extend(Ship, Mass);
 
@@ -208,9 +210,6 @@ Ship.prototype.refresh = function(c) {
 	c.stroke();
 	c.restore();	
 
-	for (var i=0; i<this.projectiles.length;i++) {
-		this.projectiles[i].refresh(c);
-	}
 }
 
 Ship.prototype.update = function() {
@@ -222,17 +221,11 @@ Ship.prototype.update = function() {
 		var projectile = new Projectile(this);
 		projectile.apply_force(this.angle, this.shooting_power);
 		this.apply_force(this.angle - Math.PI, this.shooting_power);
-		this.projectiles.push(projectile);
+		this.game.objects.push(projectile);
 		this.reload_in = this.reload_time;
 	}
 	if(this.reload_in > 0) this.reload_in -= 1;
 	Mass.prototype.update.apply(this, arguments);
-	for (var i=0; i<this.projectiles.length;i++) {
-		this.projectiles[i].update();
-		if (this.projectiles[i].life <= 0) {
-			this.projectiles.splice(i, 1);
-		}
-	}
 }
 
 Ship.prototype.projectile_velocity = function() {
@@ -254,6 +247,9 @@ Projectile = function(ship) {
 extend(Projectile, Mass);
 Projectile.prototype.update = function() {
 	this.life -= 1;
+	if (this.life <= 0) {
+		this.delete_me = true;
+	}
 	Mass.prototype.update.apply(this, arguments);	
 }
 Projectile.prototype.refresh = function(c) {
@@ -278,6 +274,9 @@ Particle = function(game, position, velocity) {
 extend(Particle, Mass);
 Particle.prototype.update = function() {
 	this.life -= 1;
+	if (this.life <= 0) {
+		this.delete_me = true;
+	}
 	Mass.prototype.update.apply(this, arguments);	
 }
 Particle.prototype.refresh = function(c) {
