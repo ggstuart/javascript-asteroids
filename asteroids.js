@@ -10,6 +10,12 @@ function random_position(canvas) {
 		y: Math.random() * canvas.height
 	}
 }
+function middle(canvas) {
+	return {
+		x: canvas.width / 2,
+		y: canvas.height / 2
+	}
+}
 function random_velocity(canvas) {
 	return {
 		x: (Math.random() - 0.5) * canvas.width * 0.01,
@@ -19,21 +25,28 @@ function random_velocity(canvas) {
 function random_rotation() {
 	return Math.random() * 2 * Math.PI * 0.01;
 }
-
+function distance_between(obj1, obj2) {
+	return Math.sqrt(Math.pow(obj1.position.x - obj2.position.x,2) + Math.pow(obj1.position.y - obj2.position.y,2));
+}
 // THE GAME===========================
 
 function Game(canvas) {
 	this.canvas = canvas;
 	this.c = this.canvas.getContext("2d");
-	this.objects = [];
-	this.n_asteroids = 5;
-	this.add_asteroids(this.n_asteroids);
 	this.ship = new Ship(this, this.canvas);
-	this.objects.push(this.ship);
+	this.restart();
 }
-Game.prototype.add_asteroids = function(n) {
-	for (var i=0;i<n;i++) {
-		this.objects.push(new Asteroid(this.canvas, 2000, random_position(this.canvas), random_velocity(this.canvas), random_rotation()));
+Game.prototype.restart = function() {
+	this.objects = [];
+  this.level = 1;
+  this.add_asteroids();
+  this.ship.position = middle(this.canvas);
+  this.ship.life = 100;
+  this.score = 0;
+}
+Game.prototype.add_asteroids = function() {
+	for (var i=0;i<this.level;i++) {
+		this.objects.push(new Asteroid(this.canvas, 2500, random_position(this.canvas), random_velocity(this.canvas), random_rotation()));
 	}
 }
 Game.prototype.update = function() {
@@ -41,13 +54,52 @@ Game.prototype.update = function() {
 		this.objects[i].update();
 		if(this.objects[i].delete_me) this.objects.splice(i, 1);
 	}
+	this.ship.update();
+	this.detectCollisions();
+	if(this.ship.life <=0) {
+		this.restart();
+	}
 }
 Game.prototype.refresh = function() {
 	this.c.clearRect ( 0 , 0 , this.canvas.width, this.canvas.height );
 	for (var i=0;i<this.objects.length;i++) {
 		this.objects[i].refresh(this.c);
 	}
+	this.ship.refresh(this.c);
+	this.c.save();
+	this.c.fillStyle = 'white';
+	this.c.strokeStyle = 'white';
+	this.c.translate(this.canvas.width - 120, 20)
+	this.c.beginPath();
+	this.c.rect(0, 0, this.ship.life, 10);
+	this.c.fill();
+	this.c.rect(0, 0, 100, 10);
+	this.c.stroke();
+	this.c.restore();
 };
+Game.prototype.detectCollisions = function() {	
+	for(var i=0; i<this.objects.length; i++) {
+		var object = this.objects[i];
+		var distance = distance_between(this.ship, object);
+		if(distance < object.radius + this.ship.radius) {
+			this.ship.life -=1;
+		}
+	}
+
+	// for(var i=0; i<this.asteroids.length; i++) {
+	// 	var asteroid = this.asteroids[i];
+	// 	for(var j=0; j<this.ship.bullets.length; j++) {
+	// 		var bullet = this.ship.bullets[j];
+	// 		if (bullet.life >0) {
+	// 			var distance = Math.sqrt(Math.pow(asteroid.x - bullet.x,2) + Math.pow(asteroid.y - bullet.y,2));
+	// 			if(distance < asteroid.size + bullet.size) {
+	// 				bullet.explode();
+	// 				asteroid.explode();
+	// 			}				
+	// 		}
+	// 	}
+	// }
+}
 Game.prototype.ApplyKey = function(e, value) {
     e = e || window.event;
     if (e.keyCode == '32') {// space bar
@@ -179,6 +231,9 @@ Ship = function(game) {
 	this.retroThruster = false;
 	this.trigger = false;
 
+	this.life = 100;
+	this.radius = 5;
+
 	this.power = 70;
 	this.torque = 2.5;
 	this.friction = 0.995;
@@ -187,13 +242,12 @@ Ship = function(game) {
 	this.reload_time = 15;
 	this.reload_in = 0;
 	this.projectile_mass = 100;
-	this.projectile_life = 400;
+	this.projectile_life = 200;
 	this.projectile_impact = 1;
 }
 extend(Ship, Mass);
-
 Ship.prototype.refresh = function(c) {
-	var unit = 5;
+	var unit = this.radius;
 	c.save();
 	c.translate(this.position.x, this.position.y);
 	c.rotate(-this.angle);
@@ -208,8 +262,7 @@ Ship.prototype.refresh = function(c) {
 	c.lineWidth = 2;
 	c.strokeStyle = '#00a300';
 	c.stroke();
-	c.restore();	
-
+	c.restore();
 }
 Ship.prototype.apply_friction = function() {
 	this.rotation_speed *= this.friction; //retard the rotation for gameplay reasons
@@ -238,14 +291,21 @@ Ship.prototype.projectile_velocity = function() {
 		y: this.velocity.y * 2
 	}
 }
+Ship.prototype.launch_position = function() {
+	return {
+		x: this.position.x + this.velocity.x + Math.sin(this.angle) * this.radius * 2,
+		y: this.position.y + this.velocity.y + Math.cos(this.angle) * this.radius * 2
+	};
+}
 
 
 // PROJECTILES===========================
 
 Projectile = function(ship) {
-	this.super(ship.canvas, ship.projectile_mass, {x: ship.position.x, y: ship.position.y}, {x: ship.velocity.x, y: ship.velocity.y}, 0)
+	this.super(ship.canvas, ship.projectile_mass, ship.launch_position(), {x: ship.velocity.x, y: ship.velocity.y}, 0)
 	this.impact = ship.projectile_impact;
 	this.life = ship.projectile_life;
+	this.radius = 5;
 }
 extend(Projectile, Mass);
 Projectile.prototype.update = function() {
