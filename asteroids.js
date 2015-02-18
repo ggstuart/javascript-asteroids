@@ -31,7 +31,6 @@ function Game(canvas) {
 	this.ship = new Ship(this, this.canvas);
 	this.objects.push(this.ship);
 }
-
 Game.prototype.add_asteroids = function(n) {
 	for (var i=0;i<n;i++) {
 		this.objects.push(new Asteroid(this.canvas, 2000, random_position(this.canvas), random_velocity(this.canvas), random_rotation()));
@@ -182,6 +181,7 @@ Ship = function(game) {
 
 	this.power = 70;
 	this.torque = 2.5;
+	this.friction = 0.995;
 
 	this.shooting_power = 200;
 	this.reload_time = 15;
@@ -211,12 +211,15 @@ Ship.prototype.refresh = function(c) {
 	c.restore();	
 
 }
-
+Ship.prototype.apply_friction = function() {
+	this.rotation_speed *= this.friction; //retard the rotation for gameplay reasons
+	this.velocity.x *= this.friction; //retard the speed for gameplay reasons
+	this.velocity.y *= this.friction; //retard the speed for gameplay reasons
+}
 Ship.prototype.update = function() {
 	this.apply_torque(this.torque * (this.leftBooster - this.rightBooster));
 	var force_magnitude = this.power * (this.mainThruster - this.retroThruster);
 	this.apply_force(this.angle, force_magnitude);
-	this.rotation_speed *= 0.99; //retard the rotation for gameplay reasons (implement as friction?)
 	if (this.trigger && this.reload_in === 0) {
 		var projectile = new Projectile(this);
 		projectile.apply_force(this.angle, this.shooting_power);
@@ -225,11 +228,11 @@ Ship.prototype.update = function() {
 		this.reload_in = this.reload_time;
 	}
 	if(this.reload_in > 0) this.reload_in -= 1;
+	this.apply_friction();
 	Mass.prototype.update.apply(this, arguments);
 }
 
 Ship.prototype.projectile_velocity = function() {
-
 	return {
 		x: this.velocity.x * 2,
 		y: this.velocity.y * 2
