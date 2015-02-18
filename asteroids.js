@@ -10,6 +10,11 @@ function random_position(canvas) {
     y: Math.random() * canvas.height
   }
 }
+function copy_coords(coords) {
+  return {
+    x: coords.x,
+    y: coords.y
+  };
 }
 function middle(canvas) {
   return {
@@ -23,6 +28,8 @@ function random_velocity(canvas) {
     y: (Math.random() - 0.5) * canvas.height * 0.01
   }
 }
+function random_angle() {
+  return Math.random() * 2 * Math.PI;
 }
 function random_rotation() {
   return Math.random() * 2 * Math.PI * 0.01;
@@ -39,9 +46,11 @@ function Game(canvas) {
   this.restart();
 }
 Game.prototype.restart = function() {
+  this.asteroids = [];
+  this.projectiles = [];
   this.objects = [];
   this.level = 1;
-  this.add_asteroids();
+  this.reset_asteroids();
   this.ship.position = middle(this.canvas);
   this.ship.velocity = {x: 0, y: 0};
   this.ship.rotation_speed = 0;
@@ -49,61 +58,96 @@ Game.prototype.restart = function() {
   this.ship.life = 100;
   this.score = 0;
 }
-Game.prototype.add_asteroids = function() {
-	for (var i=0;i<this.level;i++) {
-		this.objects.push(new Asteroid(this.canvas, 2500, random_position(this.canvas), random_velocity(this.canvas), random_rotation()));
-	}
+Game.prototype.reset_asteroids = function() {
+  this.asteroids = [];
+  for (var i=0;i<this.level;i++) {
+    this.asteroids.push(new Asteroid(this, 2500, random_position(this.canvas), random_velocity(this.canvas), random_rotation()));
+  }
+}
+Game.prototype.level_up = function() {
+  this.level += 1;
+  this.reset_asteroids();
+}
+Game.prototype.add_asteroid = function(asteroid) {
+  this.asteroids.push(asteroid);
 }
 Game.prototype.update = function() {
-	for (var i=0;i<this.objects.length;i++) {
-		this.objects[i].update();
-		if(this.objects[i].delete_me) this.objects.splice(i, 1);
-	}
-	this.ship.update();
-	this.detectCollisions();
-	if(this.ship.life <=0) {
-		this.restart();
-	}
+  if(this.asteroids.length === 0) this.level_up();
+  for (var i=0;i<this.objects.length;i++) {
+    this.objects[i].update();
+    if(this.objects[i].delete_me) this.objects.splice(i, 1);
+  }
+  for (var i=0;i<this.asteroids.length;i++) {
+    if(this.asteroids[i].delete_me) {
+      this.asteroids.splice(i, 1);
+    } else {
+      this.asteroids[i].update();      
+    }
+  }
+  for (var i=0;i<this.projectiles.length;i++) {
+    if(this.projectiles[i].delete_me) {
+      this.projectiles.splice(i, 1);
+    } else {
+      this.projectiles[i].update();
+    }
+  }
+  this.ship.update();
+  this.detectCollisions();
+  if(this.ship.life <=0) {
+    this.restart();
+  }
 }
 Game.prototype.refresh = function() {
   this.c.clearRect (0, 0, this.canvas.width, this.canvas.height);
-	for (var i=0;i<this.objects.length;i++) {
-		this.objects[i].refresh(this.c);
-	}
-	this.ship.refresh(this.c);
-	this.c.save();
-	this.c.fillStyle = 'white';
-	this.c.strokeStyle = 'white';
-	this.c.translate(this.canvas.width - 120, 20)
-	this.c.beginPath();
-	this.c.rect(0, 0, this.ship.life, 10);
-	this.c.fill();
-	this.c.rect(0, 0, 100, 10);
-	this.c.stroke();
-	this.c.restore();
-};
-Game.prototype.detectCollisions = function() {	
-	for(var i=0; i<this.objects.length; i++) {
-		var object = this.objects[i];
-		var distance = distance_between(this.ship, object);
-		if(distance < object.radius + this.ship.radius) {
-			this.ship.life -=1;
-		}
-	}
+  for (var i=0;i<this.projectiles.length;i++) {
+    this.projectiles[i].refresh(this.c);
+  }
+  for (var i=0;i<this.asteroids.length;i++) {
+    this.asteroids[i].refresh(this.c);
+  }
+  for (var i=0;i<this.objects.length;i++) {
+    this.objects[i].refresh(this.c);
+  }
+  this.ship.refresh(this.c);
+  this.c.save();
+  this.c.fillStyle = 'white';
+  this.c.strokeStyle = 'white';
+  this.c.translate(this.canvas.width - 120, 20)
+  this.c.beginPath();
+  this.c.rect(0, 0, this.ship.life, 10);
+  this.c.fill();
+  this.c.rect(0, 0, 100, 10);
+  this.c.stroke();
+  this.c.restore();
 
-	// for(var i=0; i<this.asteroids.length; i++) {
-	// 	var asteroid = this.asteroids[i];
-	// 	for(var j=0; j<this.ship.bullets.length; j++) {
-	// 		var bullet = this.ship.bullets[j];
-	// 		if (bullet.life >0) {
-	// 			var distance = Math.sqrt(Math.pow(asteroid.x - bullet.x,2) + Math.pow(asteroid.y - bullet.y,2));
-	// 			if(distance < asteroid.size + bullet.size) {
-	// 				bullet.explode();
-	// 				asteroid.explode();
-	// 			}				
-	// 		}
-	// 	}
-	// }
+  this.c.save();
+  this.c.fillStyle = 'white';
+  this.c.translate(20, 30)
+  this.c.font = "14px Arial";
+  this.c.fillText("level " + this.level,0,0);
+  this.c.restore();
+};
+Game.prototype.detectCollisions = function() {
+  var to_explodes = [];
+  for(var i=0; i<this.asteroids.length; i++) {
+    var asteroid = this.asteroids[i];
+    for(var j=0; j<this.projectiles.length; j++) {
+      var projectile = this.projectiles[j];
+      var distance = distance_between(projectile, asteroid);
+      if(!projectile.delete_me && distance < (asteroid.radius + projectile.radius)) {
+        projectile.delete_me = true;
+        to_explodes.push([asteroid, projectile.impact]);
+      }      
+    }
+    var distance = distance_between(this.ship, asteroid);
+    if(distance < asteroid.radius + this.ship.radius) {
+      this.ship.life -=1;
+    }
+  }
+  for(var i=0;i<to_explodes.length;i++) {
+    to_explodes[i][0].explode(to_explodes[i][1]);
+  }
+
 }
 Game.prototype.ApplyKey = function(e, value) {
     e = e || window.event;
@@ -124,79 +168,81 @@ Game.prototype.ApplyKey = function(e, value) {
     }
 };
 Game.prototype.keyDown = function(e) {
-	this.ApplyKey(e, true);
+  this.ApplyKey(e, true);
 };
 Game.prototype.keyUp = function(e) {
-	this.ApplyKey(e, false);
+  this.ApplyKey(e, false);
 };
 
 
 // Generic MASS===========================
 
 function Mass(canvas, mass, position, velocity, rotation_speed) {
-	this.canvas = canvas;
-	this.mass = mass;
-	this.position = position;
-	this.velocity = velocity;
-	this.angle = Math.PI;
-	this.rotation_speed = rotation_speed;
-	this.delete_me = false;
+  this.canvas = canvas;
+  this.mass = mass;
+  this.position = position;
+  this.velocity = velocity;
+  this.angle = Math.PI;
+  this.rotation_speed = rotation_speed;
+  this.delete_me = false;
 }
 
 Mass.prototype.apply_force = function(angle, magnitude) {
-	//sohcahtoa
-	var force = {
-		x: Math.sin(angle) * magnitude,
-		y: Math.cos(angle) * magnitude
-	}
-	// f = ma
-	this.velocity.x += force.x / this.mass;
-	this.velocity.y += force.y / this.mass;
+  //sohcahtoa
+  var force = {
+    x: Math.sin(angle) * magnitude,
+    y: Math.cos(angle) * magnitude
+  }
+  // f = ma
+  this.velocity.x += force.x / this.mass;
+  this.velocity.y += force.y / this.mass;
 }
 
 Mass.prototype.apply_torque = function(torque) {
-	// f = ma
-	this.rotation_speed += torque / this.mass;
+  // f = ma
+  this.rotation_speed += torque / this.mass;
 }
 
 
 Mass.prototype.update = function() {
-	this.position.x += this.velocity.x;
-	this.position.y += this.velocity.y;
-	if (this.position.x > this.canvas.width) {
-		this.position.x -= this.canvas.width;		
-	} else if (this.position.x < 0) {
-		this.position.x += this.canvas.width;
-	}
-	if (this.position.y > this.canvas.height) {
-		this.position.y -= this.canvas.height;		
-	} else if (this.position.y < 0) {
-		this.position.y += this.canvas.height;
-	}
-	this.angle += this.rotation_speed;
-	if(this.angle > 2 * Math.PI) {
-		this.angle -= 2 * Math.PI;
-	}
-	if(this.angle < 0) {
-		this.angle += 2 * Math.PI;
-	}
+  this.position.x += this.velocity.x;
+  this.position.y += this.velocity.y;
+  if (this.position.x > this.canvas.width) {
+    this.position.x -= this.canvas.width;    
+  } else if (this.position.x < 0) {
+    this.position.x += this.canvas.width;
+  }
+  if (this.position.y > this.canvas.height) {
+    this.position.y -= this.canvas.height;    
+  } else if (this.position.y < 0) {
+    this.position.y += this.canvas.height;
+  }
+  this.angle += this.rotation_speed;
+  if(this.angle > 2 * Math.PI) {
+    this.angle -= 2 * Math.PI;
+  }
+  if(this.angle < 0) {
+    this.angle += 2 * Math.PI;
+  }
 }
 
 Mass.prototype.refresh = function(c) {
-	c.beginPath();
+  c.beginPath();
     c.arc(this.position.x, this.position.y, 5, 0, 2 * Math.PI, false);
-	c.lineWidth = 2;
-	c.strokeStyle = '#007300';
-	c.stroke();
+  c.lineWidth = 2;
+  c.strokeStyle = '#007300';
+  c.stroke();
 }
 
 // ASTEROIDS===========================
 
-Asteroid = function(canvas, mass, position, velocity, rotation_speed) {
-	this.super(canvas, mass, position, velocity, rotation_speed);
-	this.density = 0.2 + Math.random() * 0.1;
-	this.volume = this.mass / this.density;
-	this.radius = Math.pow(this.volume / (4/3)*Math.PI, 1/3); //assumes unit density i.e. mass === volume
+Asteroid = function(game, mass, position, velocity, rotation_speed) {
+  this.super(game.canvas, mass, position, velocity, rotation_speed);
+  this.game = game;
+  this.density = 0.3 + Math.random() * 0.2;
+  this.area = this.mass / this.density;
+  //r = sqrt(area/PI)
+  this.radius = Math.pow(this.area / Math.PI, 1/2);
   this.bumpiness = 0.25 + Math.random() * 0.5;
   this.randoms = [];
   var vertices = (5 + Math.random() * 10).toFixed()
@@ -226,6 +272,26 @@ Asteroid.prototype.refresh = function(c) {
   c.stroke();
   c.restore();
 }
+Asteroid.prototype.update = function() {
+  if(this.mass < 100) this.delete_me = true;
+  Mass.prototype.update.apply(this, arguments);
+}
+Asteroid.prototype.explode = function(impact) {
+  this.delete_me = true;
+  var new_mass = (this.mass - impact) / 2;
+  if(new_mass >= 100) {
+    var a1 = new Asteroid(this.game, new_mass, copy_coords(this.position), copy_coords(this.velocity), -this.rotation_speed);
+    var a2 = new Asteroid(this.game, new_mass, copy_coords(this.position), copy_coords(this.velocity), this.rotation_speed);
+    a1.density = this.density;
+    a2.density = this.density;
+    var split_angle = random_angle();
+    a1.apply_force(split_angle, impact);
+    a2.apply_force(split_angle + Math.PI, impact);
+    this.game.add_asteroid(a1);
+    this.game.add_asteroid(a2);
+  }
+};
+
 
 // THE SHIP===========================
 
@@ -285,12 +351,7 @@ Ship.prototype.update = function() {
     var projectile = new Projectile(this);
     projectile.apply_force(this.angle, this.shooting_power);
     this.apply_force(this.angle - Math.PI, this.shooting_power);
-		this.game.objects.push(projectile);
-Ship.prototype.projectile_velocity = function() {
-	return {
-		x: this.velocity.x * 2,
-		y: this.velocity.y * 2
-	}
+    this.game.projectiles.push(projectile);
     this.reload_in = this.reload_time;
   }
   if(this.reload_in > 0) this.reload_in -= 1;
