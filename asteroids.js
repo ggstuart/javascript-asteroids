@@ -41,6 +41,9 @@ Game.prototype.restart = function() {
   this.level = 1;
   this.add_asteroids();
   this.ship.position = middle(this.canvas);
+  this.ship.velocity = {x: 0, y: 0};
+  this.ship.rotation_speed = 0;
+  this.ship.angle = Math.PI;
   this.ship.life = 100;
   this.score = 0;
 }
