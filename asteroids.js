@@ -37,6 +37,14 @@ function random_rotation() {
 function distance_between(obj1, obj2) {
   return Math.sqrt(Math.pow(obj1.position.x - obj2.position.x,2) + Math.pow(obj1.position.y - obj2.position.y,2));
 }
+function compare(a,b) {
+  if (a.score === b.score) return 0;
+  if (a.score > b.score) {
+    return -1;
+  } else {
+    return 1;    
+  }
+}
 // THE GAME===========================
 
 var fps = 20;//frames per second used at end of file
@@ -44,10 +52,13 @@ var fps = 20;//frames per second used at end of file
 function Game(canvas) {
   this.canvas = canvas;
   this.c = this.canvas.getContext("2d");
+  this.load_scores();
   this.ship = new Ship(this, this.canvas);
-  this.restart();
+  this.waiting = true;
+//  this.restart();
 }
 Game.prototype.restart = function() {
+  this.waiting = false;
   this.asteroids = [];
   this.projectiles = [];
   this.objects = [];
@@ -74,6 +85,7 @@ Game.prototype.add_asteroid = function(asteroid) {
   this.asteroids.push(asteroid);
 }
 Game.prototype.update = function() {
+  if (this.waiting) return;
   if(this.asteroids.length === 0) this.level_up();
   for (var i=0;i<this.objects.length;i++) {
     this.objects[i].update();
@@ -96,11 +108,56 @@ Game.prototype.update = function() {
   this.ship.update();
   this.detectCollisions();
   if(this.ship.life <=0) {
-    this.restart();
+    this.save_score();
+    this.waiting = true;
   }
 }
+Game.prototype.save_score = function() {
+  var name = window.prompt('Please enter your name');
+  if (name != null) {
+    this.scores.push({
+      name: name,
+      score: this.score
+    })
+  }
+  if(typeof(Storage) !== "undefined") {
+    var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
+    local_data['scores'] = this.scores;
+    localStorage.setItem("asteroids", JSON.stringify(local_data));
+  }
+}
+Game.prototype.load_scores = function() {
+  if(typeof(Storage) !== "undefined") {
+    var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
+    this.scores = local_data['scores'] || [];
+  } else {
+    this.scores = [];
+  }
+}
+
 Game.prototype.refresh = function() {
   this.c.clearRect (0, 0, this.canvas.width, this.canvas.height);
+  if (this.waiting) {
+    var scores = this.scores.sort(compare);
+    this.c.save();
+    this.c.fillStyle = 'white';
+    this.c.font = "16px Arial";
+    this.c.translate(0, 100)
+    this.c.fillText('Name',100,0);
+    this.c.fillText('Score',this.canvas.width - 150,0);
+    this.c.translate(0, 15)
+    for (var i=0;i<Math.min(this.scores.length, 10);i++) {
+      this.c.translate(0, 15)
+      this.c.fillText(this.scores[i]['name'],100,0);
+      this.c.fillText(this.scores[i]['score'],this.canvas.width - 150,0);
+      this.c.translate(0, 15)
+    }
+    this.c.translate(0, 50)
+    this.c.fillText('press space to start',180,0);
+    this.c.restore();
+    return;
+  }
+
   for (var i=0;i<this.projectiles.length;i++) {
     this.projectiles[i].refresh(this.c);
   }
@@ -162,7 +219,11 @@ Game.prototype.detectCollisions = function() {
 Game.prototype.ApplyKey = function(e, value) {
     e = e || window.event;
     if (e.keyCode == '32') {// space bar
-        this.ship.trigger = value;
+        if(this.waiting) {
+          this.restart();
+        } else {
+          this.ship.trigger = value;
+        }
     }
     if (e.keyCode == '38') {// up arrow
         this.ship.mainThruster = value;
