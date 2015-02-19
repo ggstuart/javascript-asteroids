@@ -39,6 +39,8 @@ function distance_between(obj1, obj2) {
 }
 // THE GAME===========================
 
+var fps = 20;//frames per second used at end of file
+
 function Game(canvas) {
   this.canvas = canvas;
   this.c = this.canvas.getContext("2d");
@@ -423,7 +425,6 @@ Particle.prototype.refresh = function(c) {
 
 var canvas = document.getElementById("asteroids");
 var game = new Game(canvas);
-var fps = 70;//frames per second
 var framerate = 1000 / fps;//milliseconds between frames
 
 
