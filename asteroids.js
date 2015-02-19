@@ -109,7 +109,7 @@ Game.prototype.update = function() {
   this.ship.update();
   this.detectCollisions();
   if(this.ship.life <=0) {
-    if (this.score <= this.scores[10]) this.save_score();
+    if (this.score > this.scores[this.scores.length-1]['score']) this.save_score();
     this.waiting = true;
   }
 }
