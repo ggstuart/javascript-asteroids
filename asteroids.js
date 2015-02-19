@@ -64,6 +64,7 @@ Game.prototype.restart = function() {
   this.objects = [];
   this.level = 1;
   this.reset_asteroids();
+  this.ship.reset();
   this.ship.position = middle(this.canvas);
   this.ship.velocity = {x: 0, y: 0};
   this.ship.rotation_speed = 0;
@@ -108,11 +109,12 @@ Game.prototype.update = function() {
   this.ship.update();
   this.detectCollisions();
   if(this.ship.life <=0) {
-    this.save_score();
+    if (this.score <= this.scores[10]) this.save_score();
     this.waiting = true;
   }
 }
 Game.prototype.save_score = function() {
+
   var name = window.prompt('Please enter your name');
   if (name !== null && name !== "") {
     this.scores.push({
@@ -382,11 +384,7 @@ Ship = function(game) {
   this.super(game.canvas, 1000, {x: game.canvas.width / 2, y: game.canvas.height / 2}, {x: 0, y: 0}, 0)
   this.game = game;
 
-  this.mainThruster = false;
-  this.leftBooster = false;
-  this.rightBooster = false;
-  this.retroThruster = false;
-  this.trigger = false;
+  this.reset();
 
   this.life = 100;
   this.radius = 5;
@@ -403,6 +401,13 @@ Ship = function(game) {
   this.projectile_impact = 100;
 }
 extend(Ship, Mass);
+Ship.prototype.reset = function() {
+  this.mainThruster = false;
+  this.leftBooster = false;
+  this.rightBooster = false;
+  this.retroThruster = false;
+  this.trigger = false;
+}
 Ship.prototype.refresh = function(c) {
   var unit = this.radius;
   c.save();
