@@ -24,8 +24,8 @@ function middle(canvas) {
 }
 function random_velocity(canvas) {
   return {
-    x: (Math.random() - 0.5) * canvas.width * 0.01,
-    y: (Math.random() - 0.5) * canvas.height * 0.01
+    x: (Math.random() - 0.5) * canvas.width * 0.005,
+    y: (Math.random() - 0.5) * canvas.height * 0.005
   }
 }
 function random_angle() {
