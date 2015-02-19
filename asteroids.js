@@ -128,6 +128,14 @@ Game.prototype.refresh = function() {
   this.c.font = "14px Arial";
   this.c.fillText("level " + this.level,0,0);
   this.c.restore();
+
+  this.c.save();
+  this.c.fillStyle = 'white';
+  this.c.translate(20, 50)
+  this.c.font = "14px Arial";
+  this.c.fillText("score: " + this.score,0,0);
+  this.c.restore();
+
 };
 Game.prototype.detectCollisions = function() {
   var to_explodes = [];
