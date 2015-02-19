@@ -114,7 +114,7 @@ Game.prototype.update = function() {
 }
 Game.prototype.save_score = function() {
   var name = window.prompt('Please enter your name');
-  if (name != null) {
+  if (name !== null && name !== "") {
     this.scores.push({
       name: name,
       score: this.score
@@ -141,10 +141,11 @@ Game.prototype.refresh = function() {
     var scores = this.scores.sort(compare);
     this.c.save();
     this.c.fillStyle = 'white';
-    this.c.font = "16px Arial";
+    this.c.font = "bold 16px Arial";
     this.c.translate(0, 100)
     this.c.fillText('Name',100,0);
     this.c.fillText('Score',this.canvas.width - 150,0);
+    this.c.font = "16px Arial";
     this.c.translate(0, 15)
     for (var i=0;i<Math.min(this.scores.length, 10);i++) {
       this.c.translate(0, 15)
