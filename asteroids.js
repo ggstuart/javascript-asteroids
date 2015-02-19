@@ -11,10 +11,7 @@ function random_position(canvas) {
   }
 }
 function copy_coords(coords) {
-  return {
-    x: coords.x,
-    y: coords.y
-  };
+  return { x: coords.x, y: coords.y };
 }
 function middle(canvas) {
   return {
@@ -55,7 +52,6 @@ function Game(canvas) {
   this.load_scores();
   this.ship = new Ship(this, this.canvas);
   this.waiting = true;
-//  this.restart();
 }
 Game.prototype.restart = function() {
   this.waiting = false;
@@ -65,11 +61,6 @@ Game.prototype.restart = function() {
   this.level = 1;
   this.reset_asteroids();
   this.ship.reset();
-  this.ship.position = middle(this.canvas);
-  this.ship.velocity = {x: 0, y: 0};
-  this.ship.rotation_speed = 0;
-  this.ship.angle = Math.PI;
-  this.ship.life = 100;
   this.score = 0;
 }
 Game.prototype.reset_asteroids = function() {
@@ -114,7 +105,7 @@ Game.prototype.update = function() {
   }
 }
 Game.prototype.save_score = function() {
-
+  this.load_scores();
   var name = window.prompt('Please enter your name');
   if (name !== null && name !== "") {
     this.scores.push({
@@ -124,11 +115,7 @@ Game.prototype.save_score = function() {
     this.scores = this.scores.sort(compare);
     this.scores = this.scores.slice(0, 10);
   }
-  if(typeof(Storage) !== "undefined") {
-    var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
-    local_data['scores'] = this.scores;
-    localStorage.setItem("asteroids", JSON.stringify(local_data));
-  }
+  this.save_scores();
 }
 Game.prototype.load_scores = function() {
   if(typeof(Storage) !== "undefined") {
@@ -136,6 +123,13 @@ Game.prototype.load_scores = function() {
     this.scores = local_data['scores'] || [];
   } else {
     this.scores = [];
+  }
+}
+Game.prototype.save_scores = function() {
+  if(typeof(Storage) !== "undefined") {
+    var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
+    local_data['scores'] = this.scores;
+    localStorage.setItem("asteroids", JSON.stringify(local_data));
   }
 }
 
@@ -249,7 +243,6 @@ Game.prototype.keyDown = function(e) {
 Game.prototype.keyUp = function(e) {
   this.ApplyKey(e, false);
 };
-
 
 // Generic MASS===========================
 
@@ -402,6 +395,11 @@ Ship = function(game) {
 }
 extend(Ship, Mass);
 Ship.prototype.reset = function() {
+  this.position = middle(this.canvas);
+  this.velocity = {x: 0, y: 0};
+  this.rotation_speed = 0;
+  this.angle = Math.PI;
+  this.life = 100;
   this.mainThruster = false;
   this.leftBooster = false;
   this.rightBooster = false;
