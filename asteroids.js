@@ -282,15 +282,24 @@ Asteroid.prototype.explode = function(impact) {
   this.delete_me = true;
   var new_mass = (this.mass - impact) / 2;
   if(new_mass >= 100) {
-    var a1 = new Asteroid(this.game, new_mass, copy_coords(this.position), copy_coords(this.velocity), -this.rotation_speed);
-    var a2 = new Asteroid(this.game, new_mass, copy_coords(this.position), copy_coords(this.velocity), this.rotation_speed);
+    var new_vel = copy_coords(this.velocity);
+    new_vel.x *= 0.95;
+    new_vel.y *= 0.95;
+    var a1 = new Asteroid(this.game, new_mass, copy_coords(this.position), new_vel, this.rotation_speed);
+    var a2 = new Asteroid(this.game, new_mass, copy_coords(this.position), copy_coords(new_vel), this.rotation_speed);
     a1.density = this.density;
     a2.density = this.density;
-    var split_angle = random_angle();
-    a1.apply_force(split_angle, impact);
-    a2.apply_force(split_angle + Math.PI, impact);
+    var split_angle1 = random_angle();
+    var split_angle2 = (split_angle1 + Math.PI) % (Math.PI * 2);
+    a1.apply_force(split_angle1, impact);
+    a2.apply_force(split_angle2, impact);
+    a1.apply_torque(impact/10);
+    a2.apply_torque(-impact/10);
     this.game.add_asteroid(a1);
     this.game.add_asteroid(a2);
+    this.game.score += impact;
+  } else {
+    this.game.score += this.mass;
   }
 };
 
