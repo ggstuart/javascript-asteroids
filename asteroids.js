@@ -119,6 +119,8 @@ Game.prototype.save_score = function() {
       name: name,
       score: this.score
     })
+    this.scores = this.scores.sort(compare);
+    this.scores = this.scores.slice(0, 10);
   }
   if(typeof(Storage) !== "undefined") {
     var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
@@ -138,7 +140,6 @@ Game.prototype.load_scores = function() {
 Game.prototype.refresh = function() {
   this.c.clearRect (0, 0, this.canvas.width, this.canvas.height);
   if (this.waiting) {
-    var scores = this.scores.sort(compare);
     this.c.save();
     this.c.fillStyle = 'white';
     this.c.font = "bold 16px Arial";
@@ -149,7 +150,8 @@ Game.prototype.refresh = function() {
     this.c.translate(0, 15)
     for (var i=0;i<Math.min(this.scores.length, 10);i++) {
       this.c.translate(0, 15)
-      this.c.fillText(this.scores[i]['name'],100,0);
+      this.c.fillText(i + 1,100,0);
+      this.c.fillText(this.scores[i]['name'],140,0);
       this.c.fillText(this.scores[i]['score'],this.canvas.width - 150,0);
       this.c.translate(0, 15)
     }
