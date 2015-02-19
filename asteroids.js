@@ -1,4 +1,5 @@
-function extend(ChildClass, ParentClass) {
+(function() {
+  function extend(ChildClass, ParentClass) {
   var parent = new ParentClass();
   ChildClass.prototype = parent;
   ChildClass.prototype.super = parent.constructor;
@@ -80,8 +81,11 @@ Game.prototype.update = function() {
   if (this.waiting) return;
   if(this.asteroids.length === 0) this.level_up();
   for (var i=0;i<this.objects.length;i++) {
-    this.objects[i].update();
-    if(this.objects[i].delete_me) this.objects.splice(i, 1);
+    if(this.objects[i].delete_me) {
+      this.objects.splice(i, 1);
+    } else {
+      this.objects[i].update();
+    }
   }
   for (var i=0;i<this.asteroids.length;i++) {
     if(this.asteroids[i].delete_me) {
@@ -368,6 +372,11 @@ Asteroid.prototype.explode = function(impact) {
   } else {
     this.game.score += this.mass;
   }
+  for(var i=0; i<10; i++) {
+    var p = new Particle(this.game, this.position, this.velocity);
+    var angle = random_angle();
+    p.apply_force(angle, 500 * Math.random());
+  }
 };
 
 
@@ -433,6 +442,11 @@ Ship.prototype.update = function() {
   this.apply_torque(this.torque * (this.leftBooster - this.rightBooster));
   var force_magnitude = this.power * (this.mainThruster - this.retroThruster);
   this.apply_force(this.angle, force_magnitude);
+  if (force_magnitude) {
+    var p = new Particle(this.game, this.position, this.velocity);
+    var angle = (this.angle + Math.PI * 0.9 + Math.random() * Math.PI * 0.2) % (Math.PI * 2);
+    p.apply_force(angle, force_magnitude * 0.5 + force_magnitude * Math.random());
+  }
   if (this.trigger && this.reload_in === 0) {
     var projectile = new Projectile(this);
     projectile.apply_force(this.angle, this.shooting_power);
@@ -483,8 +497,8 @@ Projectile.prototype.refresh = function(c) {
 // PARTICLES===========================
 
 Particle = function(game, position, velocity) {
-  this.super(game.canvas, game.particle_mass(), position, velocity, 0)
-  this.life = game.particle_life;
+  this.super(game.canvas, 150, copy_coords(position), copy_coords(velocity), 0)
+  this.life = 100;
   game.objects.push(this);
 }
 extend(Particle, Mass);
@@ -499,7 +513,7 @@ Particle.prototype.refresh = function(c) {
   c.save();
   c.translate(this.position.x, this.position.y);
   c.beginPath();
-  c.arc(0,0,Math.min(this.life / 100, 2),0,2*Math.PI);
+  c.arc(0,0, Math.min(this.life / 50,3),0,2*Math.PI);
   c.lineWidth = 1;
   c.fillStyle = '#dd3300';
   c.fill();
@@ -510,7 +524,6 @@ Particle.prototype.refresh = function(c) {
 var canvas = document.getElementById("asteroids");
 var game = new Game(canvas);
 var framerate = 1000 / fps;//milliseconds between frames
-
 
 window.onkeydown = game.keyDown.bind(game);
 window.onkeyup = game.keyUp.bind(game);
@@ -527,3 +540,4 @@ function step(timestamp) {
   window.requestAnimationFrame(step);
 }
 window.requestAnimationFrame(step);
+})();
