@@ -1,5 +1,6 @@
-(function() {
-  function extend(ChildClass, ParentClass) {
+(function(window, undefined) {
+
+function extend(ChildClass, ParentClass) {
   var parent = new ParentClass();
   ChildClass.prototype = parent;
   ChildClass.prototype.super = parent.constructor;
@@ -44,8 +45,6 @@ function compare(a,b) {
   }
 }
 // THE GAME===========================
-
-var fps = 20;//frames per second used at end of file
 
 function Game(canvas) {
   this.canvas = canvas;
@@ -519,25 +518,5 @@ Particle.prototype.refresh = function(c) {
   c.fill();
   c.restore();
 }
-
-
-var canvas = document.getElementById("asteroids");
-var game = new Game(canvas);
-var framerate = 1000 / fps;//milliseconds between frames
-
-window.onkeydown = game.keyDown.bind(game);
-window.onkeyup = game.keyUp.bind(game);
-
-var previous;
-function step(timestamp) {
-  if (!previous) previous = timestamp;
-  var progress = timestamp - previous;
-  game.update();
-  if (progress >= framerate) {
-    game.refresh();
-    previous = timestamp;
-  }
-  window.requestAnimationFrame(step);
-}
-window.requestAnimationFrame(step);
-})();
+window.Asteroids = Game;
+}(this));

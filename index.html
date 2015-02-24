@@ -29,5 +29,27 @@
 		<h1>AsteroidS</h1>
 		<canvas id="asteroids" width="600" height="600"></canvas>
 		<script type="application/javascript" src="asteroids.js"></script>
+		<script type="application/javascript">
+			var fps = 20;//frames per second
+			var canvas = document.getElementById("asteroids");
+			var game = new window.Asteroids(canvas);
+			var framerate = 1000 / fps;//milliseconds between frames
+
+			window.onkeydown = game.keyDown.bind(game);
+			window.onkeyup = game.keyUp.bind(game);
+
+			var previous;
+			function step(timestamp) {
+			  if (!previous) previous = timestamp;
+			  var progress = timestamp - previous;
+			  game.update();
+			  if (progress >= framerate) {
+			    game.refresh();
+			    previous = timestamp;
+			  }
+			  window.requestAnimationFrame(step);
+			}
+			window.requestAnimationFrame(step);
+		</script>
 	</body>
 </html>
