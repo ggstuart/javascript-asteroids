@@ -170,6 +170,7 @@ Game.prototype.refresh = function() {
     this.objects[i].refresh(this.c);
   }
   this.ship.refresh(this.c);
+
   this.c.save();
   this.c.fillStyle = 'white';
   this.c.strokeStyle = 'white';
@@ -193,6 +194,19 @@ Game.prototype.refresh = function() {
   this.c.translate(20, 50)
   this.c.font = "14px Arial";
   this.c.fillText("score: " + this.score,0,0);
+  this.c.restore();
+
+  this.c.save();
+  this.c.fillStyle = 'white';
+  this.c.strokeStyle = 'white';
+  this.c.translate(20, 70)
+  this.c.font = "14px Arial";
+  this.c.fillText("ammo: ",0,0);
+  this.c.beginPath();
+  this.c.rect(50, -10, this.ship.ammo * 100 / this.ship.max_ammo, 10);
+  this.c.fill();
+  this.c.rect(50, -10, 100, 10);
+  this.c.stroke();
   this.c.restore();
 
 };
@@ -395,8 +409,16 @@ Ship = function(game) {
   this.friction = 0.995;
 
   this.shooting_power = 200;
-  this.reload_time = 15;
+
+  this.max_ammo = 20;
+  this.ammo = this.max_ammo;
+
+  this.reload_time = 30;
   this.reload_in = 0;
+
+  this.shoot_time = 10;
+  this.shoot_in = 0;
+
   this.projectile_mass = 100;
   this.projectile_life = 200;
   this.projectile_impact = 100;
@@ -446,14 +468,20 @@ Ship.prototype.update = function() {
     var angle = (this.angle + Math.PI * 0.9 + Math.random() * Math.PI * 0.2) % (Math.PI * 2);
     p.apply_force(angle, force_magnitude * 0.5 + force_magnitude * Math.random());
   }
-  if (this.trigger && this.reload_in === 0) {
+  if(this.reload_in === 0) {
+    this.ammo = Math.min(this.ammo + 1, this.max_ammo);
+    this.reload_in = this.reload_time;
+  }
+  if (this.trigger && this.ammo > 0 && this.shoot_in === 0) {
     var projectile = new Projectile(this);
     projectile.apply_force(this.angle, this.shooting_power);
     this.apply_force(this.angle - Math.PI, this.shooting_power);
     this.game.projectiles.push(projectile);
-    this.reload_in = this.reload_time;
+    this.ammo--;
+    this.shoot_in = this.shoot_time;
   }
   if(this.reload_in > 0) this.reload_in -= 1;
+  if(this.shoot_in > 0) this.shoot_in -= 1;
   this.apply_friction();
   Mass.prototype.update.apply(this, arguments);
 }
