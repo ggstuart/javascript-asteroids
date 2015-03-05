@@ -42,7 +42,7 @@
 			function step(timestamp) {
 			  if (!previous) previous = timestamp;
 			  var progress = timestamp - previous;
-			  game.update(progress);
+			  game.update(progress/1000);
 			  if (progress >= framerate) {
 			    game.refresh();
 			    previous = timestamp;
