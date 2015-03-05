@@ -76,33 +76,33 @@ Game.prototype.level_up = function() {
 Game.prototype.add_asteroid = function(asteroid) {
   this.asteroids.push(asteroid);
 }
-Game.prototype.update = function() {
+Game.prototype.update = function(progress) {
   if (this.waiting) return;
   if(this.asteroids.length === 0) this.level_up();
-  for (var i=0;i<this.objects.length;i++) {
+  for (var i = 0; i < this.objects.length; i++) {
     if(this.objects[i].delete_me) {
       this.objects.splice(i, 1);
     } else {
-      this.objects[i].update();
+      this.objects[i].update(progress);
     }
   }
-  for (var i=0;i<this.asteroids.length;i++) {
+  for (var i = 0; i < this.asteroids.length; i++) {
     if(this.asteroids[i].delete_me) {
       this.asteroids.splice(i, 1);
     } else {
-      this.asteroids[i].update();      
+      this.asteroids[i].update(progress);
     }
   }
-  for (var i=0;i<this.projectiles.length;i++) {
+  for (var i = 0; i < this.projectiles.length; i++) {
     if(this.projectiles[i].delete_me) {
       this.projectiles.splice(i, 1);
     } else {
-      this.projectiles[i].update();
+      this.projectiles[i].update(progress);
     }
   }
   this.ship.update();
   this.detectCollisions();
-  if(this.ship.life <=0) {
+  if(this.ship.life <= 0) {
     if (this.scores.length < 10 || this.score > this.scores[this.scores.length-1]['score']) this.save_score();
     this.waiting = true;
   }
