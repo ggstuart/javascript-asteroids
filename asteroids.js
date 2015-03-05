@@ -216,10 +216,11 @@ Game.prototype.detectCollisions = function() {
     var asteroid = this.asteroids[i];
     for(var j=0; j<this.projectiles.length; j++) {
       var projectile = this.projectiles[j];
+      if(projectile.delete_me) continue;
       var distance = distance_between(projectile, asteroid);
-      if(!projectile.delete_me && distance < (asteroid.radius + projectile.radius)) {
+      if(distance < (asteroid.radius + projectile.radius)) {
         projectile.delete_me = true;
-        to_explodes.push([asteroid, projectile.impact]);
+        asteroid.explode(projectile.impact);
       }      
     }
     var distance = distance_between(this.ship, asteroid);
@@ -227,10 +228,6 @@ Game.prototype.detectCollisions = function() {
       this.ship.life -=1;
     }
   }
-  for(var i=0;i<to_explodes.length;i++) {
-    to_explodes[i][0].explode(to_explodes[i][1]);
-  }
-
 }
 Game.prototype.ApplyKey = function(e, value) {
     e = e || window.event;
