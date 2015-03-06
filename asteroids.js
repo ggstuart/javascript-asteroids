@@ -220,13 +220,13 @@ Game.prototype.detectCollisions = function(progress) {
       var projectile = this.projectiles[j];
       if(projectile.delete_me) continue;
       var distance = distance_between(projectile, asteroid);
-      if(distance < (asteroid.radius + projectile.radius)) {
+      if(distance < (asteroid.radius() + projectile.radius())) {
         projectile.delete_me = true;
         asteroid.explode(projectile);
       }      
     }
     var distance = distance_between(this.ship, asteroid);
-    if(distance < asteroid.radius + this.ship.radius) {
+    if(distance < asteroid.radius() + this.ship.radius()) {
       this.ship.life -=1;
     }
   }
@@ -262,14 +262,21 @@ Game.prototype.keyUp = function(e) {
 
 // Generic MASS===========================
 
-function Mass(canvas, mass, position, velocity, rotation_speed) {
+function Mass(canvas, mass, density, position, velocity, rotation_speed) {
   this.canvas = canvas;
   this.mass = mass;
+  this.density = density;
   this.position = position;
   this.velocity = velocity;
   this.angle = Math.PI;
   this.rotation_speed = rotation_speed;
   this.delete_me = false;
+}
+
+Mass.prototype.radius = function() {
+  this.area = this.mass / this.density;
+  //r = sqrt(area/PI)
+  return Math.pow(this.area / Math.PI, 1/2);
 }
 
 Mass.prototype.apply_force = function(angle, magnitude) {
@@ -313,7 +320,7 @@ Mass.prototype.update = function(progress) {
 
 Mass.prototype.refresh = function(c) {
   c.beginPath();
-  c.arc(this.position.x, this.position.y, 5, 0, 2 * Math.PI, false);
+  c.arc(this.position.x, this.position.y, this.radius(), 0, 2 * Math.PI, false);
   c.lineWidth = 2;
   c.strokeStyle = '#007300';
   c.stroke();
@@ -322,17 +329,14 @@ Mass.prototype.refresh = function(c) {
 // ASTEROIDS===========================
 
 Asteroid = function(game, mass, position, velocity, rotation_speed) {
-  this.super(game.canvas, mass, position, velocity, rotation_speed);
+  this.super(game.canvas, mass, 0.3 + Math.random() * 0.2, position, velocity, rotation_speed);
   this.game = game;
-  this.density = 0.3 + Math.random() * 0.2;
-  this.area = this.mass / this.density;
-  //r = sqrt(area/PI)
-  this.radius = Math.pow(this.area / Math.PI, 1/2);
   this.bumpiness = 0.25 + Math.random() * 0.5;
   this.randoms = [];
+  var radius = this.radius();
   var vertices = (5 + Math.random() * 10).toFixed()
   for(var i=0; i<vertices; i++) {
-    this.randoms.push(this.radius * (1 - this.bumpiness) + this.radius * this.bumpiness * Math.random());
+    this.randoms.push(radius * (1 - this.bumpiness) + radius * this.bumpiness * Math.random());
   }
 }
 extend(Asteroid, Mass);
@@ -363,7 +367,8 @@ Asteroid.prototype.update = function(progress) {
 }
 Asteroid.prototype.explode = function(projectile) {
   this.delete_me = true;
-  var new_mass = (this.mass - projectile.impact) / 2;
+  var mass_taken = projectile.impact;
+  var new_mass = (this.mass - mass_taken) / 2;
   if(new_mass >= 100) {
     var new_vel = copy_coords(this.velocity);
     new_vel.x *= 0.95;
@@ -380,28 +385,31 @@ Asteroid.prototype.explode = function(projectile) {
     a2.apply_torque(-projectile.force/10);
     this.game.add_asteroid(a1);
     this.game.add_asteroid(a2);
-    this.game.score += projectile.impact;
+    this.game.score += mass_taken;
   } else {
-    this.game.score += this.mass;
+    mass_taken = this.mass;
   }
-  for(var i=0; i<10; i++) {
-    var p = new Particle(this.game, this.position, this.velocity);
+  this.game.score += mass_taken;
+  do {
+    var p_mass = Math.min(mass_taken, projectile.impact * 0.5 * Math.random());
+    var p = new Particle(this.game, p_mass, this.position, this.velocity, 10);
     var angle = random_angle();
     p.apply_force(angle, projectile.force * (1 + Math.random()));
-  }
+    mass_taken -= p_mass;
+  } while (mass_taken > 0)
 };
 
 
 // THE SHIP===========================
 
 Ship = function(game) {
-  this.super(game.canvas, 10, {x: game.canvas.width / 2, y: game.canvas.height / 2}, {x: 0, y: 0}, 0)
+  this.super(game.canvas, 10, 0.1, {x: game.canvas.width / 2, y: game.canvas.height / 2}, {x: 0, y: 0}, 0)
   this.game = game;
 
   this.reset();
 
   this.life = 100;
-  this.radius = 6;
+//  this.radius = 6;
 
   this.power = 500;
   this.torque = 20;
@@ -439,7 +447,7 @@ Ship.prototype.reset = function() {
   this.trigger = false;
 }
 Ship.prototype.refresh = function(c) {
-  var unit = this.radius;
+  var unit = this.radius();
   c.save();
   c.translate(this.position.x, this.position.y);
   c.rotate(-this.angle);
@@ -453,6 +461,8 @@ Ship.prototype.refresh = function(c) {
   c.lineTo(0, 2*unit);
   c.lineWidth = 2;
   c.strokeStyle = '#00a300';
+  c.fillStyle = '#000000';
+  c.fill();
   c.stroke();
   c.restore();
 }
@@ -466,9 +476,9 @@ Ship.prototype.update = function(progress) {
   var force_magnitude = this.power * (this.mainThruster - this.retroThruster) * progress;
   this.apply_force(this.angle, force_magnitude);
   if (force_magnitude) {
-    var p = new Particle(this.game, this.position, this.velocity);
+    var p = new Particle(this.game, Math.random() * 30, this.position, this.velocity, 12);
     var angle = (this.angle + Math.PI + (Math.random() - 0.5) * Math.PI * this.thrust_spread) % (Math.PI * 2);
-    p.apply_force(angle, force_magnitude * 100);
+    p.apply_force(angle, force_magnitude);
   }
   if(this.reload_in === 0) {
     this.ammo = Math.min(this.ammo + 1, this.max_ammo);
@@ -488,9 +498,10 @@ Ship.prototype.update = function(progress) {
   Mass.prototype.update.apply(this, arguments);
 }
 Ship.prototype.launch_position = function() {
+  var r = this.radius();
   return {
-    x: this.position.x + Math.sin(this.angle) * this.radius * 2,
-    y: this.position.y + Math.cos(this.angle) * this.radius * 2
+    x: this.position.x + Math.sin(this.angle) * r * 2,
+    y: this.position.y + Math.cos(this.angle) * r * 2
   };
 }
 
@@ -498,11 +509,11 @@ Ship.prototype.launch_position = function() {
 // PROJECTILES===========================
 
 Projectile = function(ship) {
-  this.super(ship.canvas, ship.projectile_mass, ship.launch_position(), {x: ship.velocity.x, y: ship.velocity.y}, 0)
+  this.super(ship.canvas, ship.projectile_mass, 0.05, ship.launch_position(), {x: ship.velocity.x, y: ship.velocity.y}, 0)
   this.impact = ship.projectile_impact;
   this.life = ship.projectile_life;
-  this.radius = 1;
-  this.force = 2000;
+//  this.radius = 1;
+  this.force = 1000 + Math.random() * 2000;
 }
 extend(Projectile, Mass);
 Projectile.prototype.update = function(progress) {
@@ -512,29 +523,30 @@ Projectile.prototype.update = function(progress) {
   }
   Mass.prototype.update.apply(this, arguments);  
 }
-Projectile.prototype.refresh = function(c) {
-  c.save();
-  c.translate(this.position.x, this.position.y);
-  c.beginPath();
-  c.arc(0,0,Math.min(this.life, 2),0,2*Math.PI);
-  c.lineWidth = 1;
-  c.strokeStyle = '#00a300';
-  c.stroke();
-  c.restore();
-}
+// Projectile.prototype.refresh = function(c) {
+//   c.save();
+//   c.translate(this.position.x, this.position.y);
+//   c.beginPath();
+//   c.arc(0,0,Math.min(this.radius(), 2),0,2*Math.PI);
+//   c.lineWidth = 1;
+//   c.strokeStyle = '#00a300';
+//   c.stroke();
+//   c.restore();
+// }
 
 
 // PARTICLES===========================
 
-Particle = function(game, position, velocity) {
-  this.super(game.canvas, 150, copy_coords(position), copy_coords(velocity), 0)
-  this.life = 4;
+Particle = function(game, mass, position, velocity, decay) {
+  this.super(game.canvas, mass, 0.5, copy_coords(position), copy_coords(velocity), 0)
+  this.decay = decay;
   game.objects.push(this);
 }
 extend(Particle, Mass);
 Particle.prototype.update = function(progress) {
-  this.life -= Math.min(progress, this.life);
-  if (this.life <= 0) {
+  this.mass -= this.decay * progress;
+//  this.life -= Math.min(progress, this.life);
+  if (this.mass <= 0) {
     this.delete_me = true;
   }
   Mass.prototype.update.apply(this, arguments);  
@@ -543,8 +555,8 @@ Particle.prototype.refresh = function(c) {
   c.save();
   c.translate(this.position.x, this.position.y);
   c.beginPath();
-  c.arc(0,0, Math.min(this.life,3),0,2*Math.PI);
-  c.lineWidth = 1;
+  c.arc(0,0, this.radius(),0,2*Math.PI);
+//  c.lineWidth = 1;
   var r = Math.random();
   if(r < 0.02) {
     c.fillStyle = '#ddff00';
