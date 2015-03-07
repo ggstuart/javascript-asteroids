@@ -59,6 +59,7 @@ Game.prototype.restart = function() {
   this.waiting = false;
   this.asteroids = [];
   this.projectiles = [];
+  this.powerups = [];
   this.objects = [];
   this.level = 1;
   this.reset_asteroids();
@@ -108,6 +109,11 @@ Game.prototype.update = function(progress) {
   if(this.ship.life <= 0) {
     if (this.scores.length < 10 || this.score > this.scores[this.scores.length-1]['score']) this.save_score();
     this.waiting = true;
+  }
+  if (Math.random() > 0.999) {
+    var possible = "AFMWLR"; //Ammo, Friction, Manouverability, Weapon, Life, Rate
+    var bonus = possible.charAt(Math.floor(Math.random() * possible.length));
+    this.powerups.push(new PowerUp(this, bonus));
   }
 }
 Game.prototype.save_score = function() {
@@ -228,6 +234,15 @@ Game.prototype.detectCollisions = function(progress) {
     var distance = distance_between(this.ship, asteroid);
     if(distance < asteroid.radius() + this.ship.radius()) {
       this.ship.life -=1;
+    }
+  }
+  for(var i=0; i<this.powerups.length; i++) {
+    var powerup = this.powerups[i];
+    if (powerup.delete_me) continue;
+    var distance = distance_between(this.ship, powerup);
+    if(distance < powerup.radius() + this.ship.radius()) {
+      this.ship.powerup(powerup.bonus);
+      powerup.delete_me = true;
     }
   }
 }
@@ -511,6 +526,32 @@ Ship.prototype.launch_position = function() {
     y: this.position.y + Math.cos(this.angle) * r * 2
   };
 }
+Ship.prototype.powerup = function(bonus) {
+//  console.log("bonus: " + bonus);
+  switch (bonus) {
+    case "W":  //weapon
+      this.shooting_power += 1;
+      this.projectile_impact += 2;
+      break;
+    case "M":  //manouverability
+      this.power *= 1.1;
+      this.torque *= 1.1;
+      break;
+    case "A":  //ammo
+      this.max_ammo += 10;
+      this.ammo += 10;
+      break;
+    case "F":  //friction
+      this.friction *= 0.999;
+      this.turning_friction *= 0.999;
+    case "L":  //life
+      this.life += this.max_life / 4;
+      this.life = Math.min(this.max_life, this.life);
+    case "R":  //rate
+      this.shoot_time *= 0.9;
+      this.reload_time *= 0.9;
+  }
+}
 
 
 // PROJECTILES===========================
@@ -564,5 +605,34 @@ Particle.prototype.refresh = function(c) {
   c.fill();
   c.restore();
 }
+
+var PowerUp = function(game, bonus) {
+  this.super(game.canvas, 100, 0.5, random_position(game.canvas), random_velocity(game.canvas));
+  this.bonus = bonus;
+  this.life = 20;
+  game.objects.push(this);
+}
+extend(PowerUp, Mass);
+PowerUp.prototype.update = function(progress) {
+  this.life -= Math.min(progress, this.life);
+  if (this.life <= 0) {
+    this.delete_me = true;
+  }
+  Mass.prototype.update.apply(this, arguments);
+}
+PowerUp.prototype.refresh = function(c) {
+  c.save();
+  c.translate(this.position.x, this.position.y);
+  c.beginPath();
+  c.arc(0,0, this.radius(),0,2*Math.PI);
+  c.fillStyle = '#00a300';
+  c.fill();
+  c.font = "bold 12px Arial";
+  c.fillStyle = '#000000';
+  c.fillText(this.bonus, -4, 4);
+  c.stroke();
+  c.restore();
+}
+
 window.Asteroids = Game;
 }(this));
