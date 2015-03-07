@@ -368,7 +368,7 @@ Asteroid.prototype.update = function(progress) {
 Asteroid.prototype.explode = function(projectile) {
   this.delete_me = true;
   var mass_taken = projectile.impact;
-  var new_mass = (this.mass - mass_taken) / 2;
+  var new_mass = Math.ceil((this.mass - mass_taken) / 2);
   if(new_mass >= 100) {
     var new_vel = copy_coords(this.velocity);
     new_vel.x *= 0.95;
@@ -392,7 +392,7 @@ Asteroid.prototype.explode = function(projectile) {
   this.game.score += mass_taken;
   do {
     var p_mass = Math.min(mass_taken, projectile.impact * 0.5 * Math.random());
-    var p = new Particle(this.game, p_mass, this.position, this.velocity, 10);
+    var p = new Particle(this.game, p_mass, this.density, this.position, this.velocity, 10);
     var angle = random_angle();
     p.apply_force(angle, projectile.force * (1 + Math.random()));
     mass_taken -= p_mass;
@@ -407,44 +407,47 @@ Ship = function(game) {
   this.game = game;
 
   this.reset();
+}
+extend(Ship, Mass);
+Ship.prototype.reset = function() {
 
-  this.life = 100;
-//  this.radius = 6;
+  this.max_life = 100;
+  this.life = this.max_life;
 
+  //position and movement
+  this.position = middle(this.canvas);
+  this.velocity = {x: 0, y: 0};
+  this.rotation_speed = 0;
+  this.angle = Math.PI;
+
+  //basic movement stuff
   this.power = 500;
   this.torque = 20;
   this.friction = 0.995;
   this.turning_friction = 0.99;
 
-  this.thrust_spread = 0.1;
-
-  this.max_ammo = 250;
-  this.ammo = this.max_ammo;
-
-  this.reload_time = 1.5;
-  this.reload_in = 0;
-
-  this.shoot_time = 0.5;
-  this.shoot_in = 0;
-
+  //weapon
   this.shooting_power = 25;
   this.projectile_mass = 0.25;
   this.projectile_life = 5;
   this.projectile_impact = 100;
-}
-extend(Ship, Mass);
-Ship.prototype.reset = function() {
-  this.position = middle(this.canvas);
-  this.velocity = {x: 0, y: 0};
-  this.rotation_speed = 0;
-  this.angle = Math.PI;
-  this.life = 100;
+
+  //ammo
+  this.max_ammo = 50;
   this.ammo = this.max_ammo;
+  this.reload_time = 1.5;
+  this.reload_in = 0;
+  this.shoot_time = 0.5;
+  this.shoot_in = 0;
+
+  this.thrust_spread = 0.25;
+
   this.mainThruster = false;
   this.leftBooster = false;
   this.rightBooster = false;
   this.retroThruster = false;
   this.trigger = false;
+
 }
 Ship.prototype.refresh = function(c) {
   var unit = this.radius();
@@ -467,16 +470,20 @@ Ship.prototype.refresh = function(c) {
   c.restore();
 }
 Ship.prototype.apply_friction = function() {
-  this.rotation_speed *= this.turning_friction; //retard the rotation for gameplay reasons
-  this.velocity.x *= this.friction; //retard the speed for gameplay reasons
-  this.velocity.y *= this.friction; //retard the speed for gameplay reasons
+  if (!this.mainThruster && !this.retroThruster) {
+    this.velocity.x *= this.friction; //retard the speed for gameplay reasons
+    this.velocity.y *= this.friction; //retard the speed for gameplay reasons    
+  }
+  if (!this.leftBooster && !this.rightBooster) {
+    this.rotation_speed *= this.turning_friction; //retard the rotation for gameplay reasons    
+  }
 }
 Ship.prototype.update = function(progress) {
   this.apply_torque(this.torque * (this.leftBooster - this.rightBooster) * progress);
   var force_magnitude = this.power * (this.mainThruster - this.retroThruster) * progress;
   this.apply_force(this.angle, force_magnitude);
   if (force_magnitude) {
-    var p = new Particle(this.game, Math.random() * 30, this.position, this.velocity, 12);
+    var p = new Particle(this.game, Math.random() * 2, 0.05, this.position, this.velocity, 0.5);
     var angle = (this.angle + Math.PI + (Math.random() - 0.5) * Math.PI * this.thrust_spread) % (Math.PI * 2);
     p.apply_force(angle, force_magnitude);
   }
@@ -512,7 +519,6 @@ Projectile = function(ship) {
   this.super(ship.canvas, ship.projectile_mass, 0.05, ship.launch_position(), {x: ship.velocity.x, y: ship.velocity.y}, 0)
   this.impact = ship.projectile_impact;
   this.life = ship.projectile_life;
-//  this.radius = 1;
   this.force = 1000 + Math.random() * 2000;
 }
 extend(Projectile, Mass);
@@ -523,22 +529,11 @@ Projectile.prototype.update = function(progress) {
   }
   Mass.prototype.update.apply(this, arguments);  
 }
-// Projectile.prototype.refresh = function(c) {
-//   c.save();
-//   c.translate(this.position.x, this.position.y);
-//   c.beginPath();
-//   c.arc(0,0,Math.min(this.radius(), 2),0,2*Math.PI);
-//   c.lineWidth = 1;
-//   c.strokeStyle = '#00a300';
-//   c.stroke();
-//   c.restore();
-// }
-
 
 // PARTICLES===========================
 
-Particle = function(game, mass, position, velocity, decay) {
-  this.super(game.canvas, mass, 0.5, copy_coords(position), copy_coords(velocity), 0)
+Particle = function(game, mass, density, position, velocity, decay) {
+  this.super(game.canvas, mass, density, copy_coords(position), copy_coords(velocity), 0)
   this.decay = decay;
   game.objects.push(this);
 }
