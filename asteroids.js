@@ -48,6 +48,7 @@ function compare(a,b) {
 // THE GAME===========================
 
 function Game(canvas) {
+  this.version = 0.2;
   this.canvas = canvas;
   this.c = this.canvas.getContext("2d");
   this.load_scores();
@@ -132,7 +133,14 @@ Game.prototype.save_score = function() {
 Game.prototype.load_scores = function() {
   if(typeof(Storage) !== "undefined") {
     var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
-    this.scores = local_data['scores'] || [];
+    var version = local_data.version || 0.1;
+    if(version < this.version) {
+      alert("New version installed, clearing scores.");
+      this.scores = [];
+      this.save_scores();
+    } else {
+      this.scores = local_data['scores'] || [];
+    }
   } else {
     this.scores = [];
   }
@@ -141,12 +149,21 @@ Game.prototype.save_scores = function() {
   if(typeof(Storage) !== "undefined") {
     var local_data = JSON.parse(localStorage.getItem("asteroids")) || {};
     local_data['scores'] = this.scores;
+    local_data['version'] = this.version;
     localStorage.setItem("asteroids", JSON.stringify(local_data));
   }
 }
 
 Game.prototype.refresh = function() {
   this.c.clearRect (0, 0, this.canvas.width, this.canvas.height);
+
+  this.c.save();
+  this.c.translate(this.canvas.width - 35, this.canvas.height - 10)
+  this.c.font = "14px Arial";
+  this.c.fillStyle = 'white';
+  this.c.fillText("v" + this.version,0,0);
+  this.c.restore();
+
   if (this.waiting) {
     this.c.save();
     this.c.fillStyle = 'white';
@@ -217,6 +234,7 @@ Game.prototype.refresh = function() {
   this.c.rect(50, -10, 100, 10);
   this.c.stroke();
   this.c.restore();
+
 
 };
 Game.prototype.detectCollisions = function(progress) {
