@@ -424,7 +424,7 @@ Asteroid.prototype.explode = function(projectile) {
   }
   this.game.score += mass_taken;
   do {
-    var p_mass = Math.min(mass_taken, projectile.impact * 0.5 * Math.random());
+    var p_mass = Math.min(mass_taken, projectile.impact * 0.25 * Math.random());
     var p = new Particle(this.game, p_mass, this.density, this.position, this.velocity, 10);
     var angle = random_angle();
     p.apply_force(angle, projectile.force * (1 + Math.random()));
