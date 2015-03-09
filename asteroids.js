@@ -48,7 +48,7 @@ function compare(a,b) {
 // THE GAME===========================
 
 function Game(canvas) {
-  this.version = 0.2;
+  this.version = 0.3;
   this.canvas = canvas;
   this.c = this.canvas.getContext("2d");
   this.load_scores();
@@ -418,7 +418,6 @@ Asteroid.prototype.explode = function(projectile) {
     a2.apply_torque(-projectile.force/10);
     this.game.add_asteroid(a1);
     this.game.add_asteroid(a2);
-    this.game.score += mass_taken;
   } else {
     mass_taken = this.mass;
   }
