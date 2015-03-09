@@ -598,7 +598,6 @@ Particle = function(game, mass, density, position, velocity, decay) {
 extend(Particle, Mass);
 Particle.prototype.update = function(progress) {
   this.mass -= this.decay * progress;
-//  this.life -= Math.min(progress, this.life);
   if (this.mass <= 0) {
     this.delete_me = true;
   }
@@ -609,7 +608,6 @@ Particle.prototype.refresh = function(c) {
   c.translate(this.position.x, this.position.y);
   c.beginPath();
   c.arc(0,0, this.radius(),0,2*Math.PI);
-//  c.lineWidth = 1;
   var r = Math.random();
   if(r < 0.02) {
     c.fillStyle = '#ddff00';
