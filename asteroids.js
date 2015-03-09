@@ -593,9 +593,9 @@ Particle = function(game, mass, density, position, velocity, decay) {
   this.super(game.canvas, mass, density, copy_coords(position), copy_coords(velocity), 0)
   this.decay = decay;
   game.objects.push(this);
-  var r = Math.floor(Math.pow(Math.random(), 4) * 255).toString(16);
+  var r = Math.floor(Math.pow(Math.random(), 3) * 255).toString(16);
   r = (r.length == 1) ? "0" + r : r;
-  this.style = '#ff' + r.toString(16) + "00";
+  this.colour = '#ff' + r + "00";
   this.rotation_speed = random_rotation() * 4;
   this.angle = 0;
 }
@@ -614,16 +614,16 @@ Particle.prototype.refresh = function(c) {
   c.save();
   c.translate(this.position.x, this.position.y);
   c.rotate(-this.angle);
-  c.fillStyle = this.style;
-  c.strokeStyle = this.style;
-  c.lineWidth = 2;
+  c.fillStyle = this.colour;
+  c.strokeStyle = this.colour;
+  c.lineWidth = 1;
   c.beginPath();
-  c.moveTo(radius, radius);
-  c.lineTo(-radius, -radius);
-  c.moveTo(-radius, radius);
-  c.lineTo(radius, -radius);
+  for(var i = 0; i < 3; i++) {
+    c.rotate(2 * Math.PI / 3);
+    c.moveTo(radius, radius);
+    c.lineTo(-radius, -radius);
+  }
   c.stroke();
-  c.fill();
   c.restore();
 }
 
