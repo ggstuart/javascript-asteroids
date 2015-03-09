@@ -1,55 +1,55 @@
 <!doctype html>
 <html>
-	<head>
-		<title>Asteroids 2</title>
-		<style type="text/css">
-			body {
-				text-align: center;
-				margin: 0;
-			}
+  <head>
+    <title>Asteroids 2</title>
+    <style type="text/css">
+      body {
+        text-align: center;
+        margin: 0;
+      }
 
-			canvas {
-				background-color: rgba(0, 0, 0, 0.9);
-				width: 600px;
-				height: 600px;
-			}
+      canvas {
+        background-color: rgba(0, 0, 0, 0.9);
+        width: 600px;
+        height: 600px;
+      }
 
-			h1 {
-				margin: 0;
-				margin-bottom: -0.21em;
-				font-family: helvetica;
-				letter-spacing: 2.5em;
-				padding-left: 2.5em;
-				font-size: 1.5em;
-				font-variant: small-caps;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>AsteroidS</h1>
-		<canvas id="asteroids" width="600" height="600"></canvas>
-		<script type="application/javascript" src="asteroids.js"></script>
-		<script type="application/javascript">
-			var fps = 20;//frames per second
-			var canvas = document.getElementById("asteroids");
-			var game = new window.Asteroids(canvas);
-			var framerate = 1000 / fps;//milliseconds between frames
+      h1 {
+        margin: 0;
+        margin-bottom: -0.21em;
+        font-family: helvetica;
+        letter-spacing: 2.5em;
+        padding-left: 2.5em;
+        font-size: 1.5em;
+        font-variant: small-caps;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AsteroidS</h1>
+    <canvas id="asteroids" width="600" height="600"></canvas>
+    <script type="application/javascript" src="asteroids.js"></script>
+    <script type="application/javascript">
+      var fps = 20;//frames per second
+      var canvas = document.getElementById("asteroids");
+      var game = new window.Asteroids(canvas);
+      var framerate = 1000 / fps;//milliseconds between frames
 
-			window.onkeydown = game.keyDown.bind(game);
-			window.onkeyup = game.keyUp.bind(game);
+      window.onkeydown = game.keyDown.bind(game);
+      window.onkeyup = game.keyUp.bind(game);
 
-			var previous;
-			function step(timestamp) {
-			  if (!previous) previous = timestamp;
-			  var progress = timestamp - previous;
-			  game.update(progress/1000);
-			  if (progress >= framerate) {
-			    game.refresh();
-			    previous = timestamp;
-			  }
-			  window.requestAnimationFrame(step);
-			}
-			window.requestAnimationFrame(step);
-		</script>
-	</body>
+      var previous;
+      function step(timestamp) {
+        if (!previous) previous = timestamp;
+        var elapsed = timestamp - previous;
+        game.update(elapsed/1000);
+        if (elapsed >= framerate) {
+          game.refresh();
+          previous = timestamp;
+        }
+        window.requestAnimationFrame(step);
+      }
+      window.requestAnimationFrame(step);
+    </script>
+  </body>
 </html>
