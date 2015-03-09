@@ -594,6 +594,9 @@ Particle = function(game, mass, density, position, velocity, decay) {
   this.super(game.canvas, mass, density, copy_coords(position), copy_coords(velocity), 0)
   this.decay = decay;
   game.objects.push(this);
+  var r = Math.floor(Math.pow(Math.random(), 4) * 255).toString(16);
+  r = (r.length == 1) ? "0" + r : r;
+  this.style = '#ff' + r.toString(16) + "00";
 }
 extend(Particle, Mass);
 Particle.prototype.update = function(progress) {
@@ -604,19 +607,19 @@ Particle.prototype.update = function(progress) {
   Mass.prototype.update.apply(this, arguments);  
 }
 Particle.prototype.refresh = function(c) {
+  var radius = this.radius();
   c.save();
   c.translate(this.position.x, this.position.y);
+  c.rotate(-this.angle);
+  c.fillStyle = this.style;
+  c.strokeStyle = this.style;
+  c.lineWidth = 2;
   c.beginPath();
-  c.arc(0,0, this.radius(),0,2*Math.PI);
-  var r = Math.random();
-  if(r < 0.02) {
-    c.fillStyle = '#ddff00';
-  } else if (r < 0.2) {
-    c.fillStyle = '#dd9900';
-  } else {
-    c.fillStyle = '#dd3300';    
-  }
-
+  c.moveTo(radius, radius);
+  c.lineTo(-radius, -radius);
+  c.moveTo(-radius, radius);
+  c.lineTo(radius, -radius);
+  c.stroke();
   c.fill();
   c.restore();
 }
