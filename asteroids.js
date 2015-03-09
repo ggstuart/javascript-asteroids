@@ -596,7 +596,7 @@ Particle = function(game, mass, density, position, velocity, decay) {
   var r = Math.floor(Math.pow(Math.random(), 3) * 255).toString(16);
   r = (r.length == 1) ? "0" + r : r;
   this.colour = '#ff' + r + "00";
-  this.rotation_speed = random_rotation() * 4;
+  this.rotation_speed = random_rotation() * 2;
   this.angle = 0;
 }
 extend(Particle, Mass);
@@ -619,9 +619,10 @@ Particle.prototype.refresh = function(c) {
   c.lineWidth = 1;
   c.beginPath();
   for(var i = 0; i < 3; i++) {
+    var r = radius * (0.5 + Math.random());
     c.rotate(2 * Math.PI / 3);
-    c.moveTo(radius, radius);
-    c.lineTo(-radius, -radius);
+    c.moveTo(r, r);
+    c.lineTo(-r, -r);
   }
   c.stroke();
   c.restore();
