@@ -42,7 +42,7 @@ function compare(a,b) {
   if (a.score > b.score) {
     return -1;
   } else {
-    return 1;    
+    return 1;
   }
 }
 // THE GAME===========================
@@ -247,7 +247,7 @@ Game.prototype.detectCollisions = function(elapsed) {
       if(distance < (asteroid.radius() + projectile.radius())) {
         projectile.delete_me = true;
         asteroid.explode(projectile);
-      }      
+      }
     }
     var distance = distance_between(this.ship, asteroid);
     if(distance < asteroid.radius() + this.ship.radius()) {
@@ -277,7 +277,7 @@ Game.prototype.ApplyKey = function(e, value) {
         this.ship.mainThruster = value;
     }
     else if (e.keyCode == '40') {// down arrow
-        this.ship.retroThruster = value;        
+        this.ship.retroThruster = value;
     }
     else if (e.keyCode == '37') {//left arrow
         this.ship.leftBooster = value;
@@ -332,12 +332,12 @@ Mass.prototype.update = function(elapsed) {
   this.position.x += this.velocity.x * elapsed;
   this.position.y += this.velocity.y * elapsed;
   if (this.position.x > this.canvas.width) {
-    this.position.x -= this.canvas.width;    
+    this.position.x -= this.canvas.width;
   } else if (this.position.x < 0) {
     this.position.x += this.canvas.width;
   }
   if (this.position.y > this.canvas.height) {
-    this.position.y -= this.canvas.height;    
+    this.position.y -= this.canvas.height;
   } else if (this.position.y < 0) {
     this.position.y += this.canvas.height;
   }
@@ -363,6 +363,7 @@ Mass.prototype.refresh = function(c) {
 Asteroid = function(game, mass, position, velocity, rotation_speed) {
   this.super(game.canvas, mass, 0.3 + Math.random() * 0.2, position, velocity, rotation_speed);
   this.game = game;
+  this.explosion = new Audio('Explosion.mp3');
   this.bumpiness = 0.25 + Math.random() * 0.5;
   this.randoms = [];
   var radius = this.radius();
@@ -398,6 +399,10 @@ Asteroid.prototype.update = function(elapsed) {
   Mass.prototype.update.apply(this, arguments);
 }
 Asteroid.prototype.explode = function(projectile) {
+  this.explosion.pause();
+  this.explosion.currentTime=0;
+  this.explosion.play();
+
   this.delete_me = true;
   var mass_taken = projectile.impact;
   var new_mass = Math.ceil((this.mass - mass_taken) / 2);
@@ -436,7 +441,7 @@ Asteroid.prototype.explode = function(projectile) {
 Ship = function(game) {
   this.super(game.canvas, 10, 0.1, {x: game.canvas.width / 2, y: game.canvas.height / 2}, {x: 0, y: 0}, 0)
   this.game = game;
-
+  this.laser = new Audio('short_laser.mp3');
   this.reset();
 }
 extend(Ship, Mass);
@@ -503,10 +508,10 @@ Ship.prototype.refresh = function(c) {
 Ship.prototype.apply_friction = function() {
   if (!this.mainThruster && !this.retroThruster) {
     this.velocity.x *= this.friction; //retard the speed for gameplay reasons
-    this.velocity.y *= this.friction; //retard the speed for gameplay reasons    
+    this.velocity.y *= this.friction; //retard the speed for gameplay reasons
   }
   if (!this.leftBooster && !this.rightBooster) {
-    this.rotation_speed *= this.turning_friction; //retard the rotation for gameplay reasons    
+    this.rotation_speed *= this.turning_friction; //retard the rotation for gameplay reasons
   }
 }
 Ship.prototype.update = function(elapsed) {
@@ -523,7 +528,11 @@ Ship.prototype.update = function(elapsed) {
     this.reload_in = this.reload_time;
   }
   if (this.trigger && this.ammo > 0 && this.shoot_in === 0) {
+
     var projectile = new Projectile(this);
+    this.laser.pause();
+    this.laser.currentTime=0;
+    this.laser.play();
     projectile.apply_force(this.angle, this.shooting_power);
     this.apply_force(this.angle - Math.PI, this.shooting_power);
     this.game.projectiles.push(projectile);
@@ -584,7 +593,7 @@ Projectile.prototype.update = function(elapsed) {
   if (this.life <= 0) {
     this.delete_me = true;
   }
-  Mass.prototype.update.apply(this, arguments);  
+  Mass.prototype.update.apply(this, arguments);
 }
 
 // PARTICLES===========================
