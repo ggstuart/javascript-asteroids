@@ -597,6 +597,8 @@ Particle = function(game, mass, density, position, velocity, decay) {
   var r = Math.floor(Math.pow(Math.random(), 4) * 255).toString(16);
   r = (r.length == 1) ? "0" + r : r;
   this.style = '#ff' + r.toString(16) + "00";
+  this.rotation_speed = random_rotation() * 4;
+  this.angle = 0;
 }
 extend(Particle, Mass);
 Particle.prototype.update = function(progress) {
@@ -604,7 +606,8 @@ Particle.prototype.update = function(progress) {
   if (this.mass <= 0) {
     this.delete_me = true;
   }
-  Mass.prototype.update.apply(this, arguments);  
+  this.angle += this.rotation_speed * progress;
+  Mass.prototype.update.apply(this, arguments);
 }
 Particle.prototype.refresh = function(c) {
   var radius = this.radius();
