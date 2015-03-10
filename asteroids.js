@@ -55,6 +55,7 @@ function Game(canvas) {
   this.ship = new Ship(this, this.canvas);
   this.waiting = true;
   this.speed = 1;
+  this.muted = true;
 }
 Game.prototype.restart = function() {
   this.waiting = false;
@@ -399,9 +400,11 @@ Asteroid.prototype.update = function(elapsed) {
   Mass.prototype.update.apply(this, arguments);
 }
 Asteroid.prototype.explode = function(projectile) {
-  this.explosion.pause();
-  this.explosion.currentTime=0;
-  this.explosion.play();
+  if(!this.game.muted) {
+    this.explosion.pause();
+    this.explosion.currentTime=0;
+    this.explosion.play();
+  }
 
   this.delete_me = true;
   var mass_taken = projectile.impact;
@@ -531,9 +534,11 @@ Ship.prototype.update = function(elapsed) {
   if (this.trigger && this.ammo > 0 && this.shoot_in === 0) {
 
     var projectile = new Projectile(this);
-    this.laser.pause();
-    this.laser.currentTime=0;
-    this.laser.play();
+    if(!this.game.muted) {
+      this.laser.pause();
+      this.laser.currentTime=0;
+      this.laser.play();      
+    }
     projectile.apply_force(this.angle, this.shooting_power);
     this.apply_force(this.angle - Math.PI, this.shooting_power);
     this.game.projectiles.push(projectile);
