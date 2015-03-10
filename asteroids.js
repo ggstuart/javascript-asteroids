@@ -522,7 +522,7 @@ Ship.prototype.update = function(elapsed) {
   var force_magnitude = this.power * (this.mainThruster - this.retroThruster) * elapsed;
   this.apply_force(this.angle, force_magnitude);
   if (force_magnitude && this.particle_in <= 0) {
-    var p = new Particle(this.game, Math.random() * 2, 0.05, this.position, this.velocity, 0.5);
+    var p = new Particle(this.game, Math.random() * 2, 0.05, this.position, this.velocity, 1);
     var angle = (this.angle + Math.PI + (Math.random() - 0.5) * Math.PI * this.thrust_spread) % (Math.PI * 2);
     p.apply_force(angle, force_magnitude);
     this.particle_in = this.particle_time;
