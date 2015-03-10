@@ -477,6 +477,8 @@ Ship.prototype.reset = function() {
   this.shoot_in = 0;
 
   this.thrust_spread = 0.25;
+  this.particle_time = 0.01;
+  this.particle_in = 0;
 
   this.mainThruster = false;
   this.leftBooster = false;
@@ -506,27 +508,21 @@ Ship.prototype.refresh = function(c) {
   c.restore();
 }
 Ship.prototype.apply_friction = function(elapsed) {
-    //Fd = ½ρv²ACd 
-    //drag = v * v * this.friction
+  //Fd = ½ρv²ACd 
+  //drag = v * v * this.friction
   this.velocity.x += ((this.velocity.x > 0) ? -1 : 1) * elapsed * this.friction * this.velocity.x * this.velocity.x;
   this.velocity.y += ((this.velocity.y > 0) ? -1 : 1) * elapsed * this.friction * this.velocity.y * this.velocity.y;
   this.rotation_speed += ((this.rotation_speed > 0) ? -1 : 1) * elapsed * this.turning_friction * this.rotation_speed * this.rotation_speed; //retard the rotation for gameplay reasons    
-//   if (!this.mainThruster && !this.retroThruster) {
-//     this.velocity.x *= 1 - (this.friction * elapsed); //retard the speed for gameplay reasons
-//     this.velocity.y *= 1 - (this.friction * elapsed); //retard the speed for gameplay reasons    
-//   }
-  // if (!this.leftBooster && !this.rightBooster) {
-  //   this.rotation_speed *= 1 - (this.turning_friction * elapsed); //retard the rotation for gameplay reasons    
-  // }
 }
 Ship.prototype.update = function(elapsed) {
   this.apply_torque(this.torque * (this.leftBooster - this.rightBooster) * elapsed);
   var force_magnitude = this.power * (this.mainThruster - this.retroThruster) * elapsed;
   this.apply_force(this.angle, force_magnitude);
-  if (force_magnitude) {
+  if (force_magnitude && this.particle_in <= 0) {
     var p = new Particle(this.game, Math.random() * 2, 0.05, this.position, this.velocity, 0.5);
     var angle = (this.angle + Math.PI + (Math.random() - 0.5) * Math.PI * this.thrust_spread) % (Math.PI * 2);
     p.apply_force(angle, force_magnitude);
+    this.particle_in = this.particle_time;
   }
   if(this.reload_in === 0) {
     this.ammo = Math.min(this.ammo + 1, this.max_ammo);
@@ -546,6 +542,7 @@ Ship.prototype.update = function(elapsed) {
   }
   if(this.reload_in > 0) this.reload_in -= Math.min(elapsed, this.reload_in);
   if(this.shoot_in > 0) this.shoot_in -= Math.min(elapsed, this.shoot_in);
+  if(this.particle_in > 0) this.particle_in -= elapsed;
   this.apply_friction(elapsed);
   Mass.prototype.update.apply(this, arguments);
 }
