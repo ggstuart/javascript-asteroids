@@ -460,10 +460,10 @@ Ship.prototype.reset = function() {
   this.angle = Math.PI;
 
   //basic movement stuff
-  this.power = 500;
-  this.torque = 20;
-  this.friction = 0.005;
-  this.turning_friction = 0.05;
+  this.power = 750;
+  this.torque = 60;
+  this.friction = 0.001;
+  this.turning_friction = 1.2;
 
   //weapon
   this.shooting_power = 25;
