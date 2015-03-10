@@ -459,8 +459,8 @@ Ship.prototype.reset = function() {
   //basic movement stuff
   this.power = 500;
   this.torque = 20;
-  this.friction = 0.995;
-  this.turning_friction = 0.99;
+  this.friction = 0.005;
+  this.turning_friction = 0.05;
 
   //weapon
   this.shooting_power = 25;
@@ -505,14 +505,19 @@ Ship.prototype.refresh = function(c) {
   c.stroke();
   c.restore();
 }
-Ship.prototype.apply_friction = function() {
-  if (!this.mainThruster && !this.retroThruster) {
-    this.velocity.x *= this.friction; //retard the speed for gameplay reasons
-    this.velocity.y *= this.friction; //retard the speed for gameplay reasons
-  }
-  if (!this.leftBooster && !this.rightBooster) {
-    this.rotation_speed *= this.turning_friction; //retard the rotation for gameplay reasons
-  }
+Ship.prototype.apply_friction = function(elapsed) {
+    //Fd = ½ρv²ACd 
+    //drag = v * v * this.friction
+  this.velocity.x += ((this.velocity.x > 0) ? -1 : 1) * elapsed * this.friction * this.velocity.x * this.velocity.x;
+  this.velocity.y += ((this.velocity.y > 0) ? -1 : 1) * elapsed * this.friction * this.velocity.y * this.velocity.y;
+  this.rotation_speed += ((this.rotation_speed > 0) ? -1 : 1) * elapsed * this.turning_friction * this.rotation_speed * this.rotation_speed; //retard the rotation for gameplay reasons    
+//   if (!this.mainThruster && !this.retroThruster) {
+//     this.velocity.x *= 1 - (this.friction * elapsed); //retard the speed for gameplay reasons
+//     this.velocity.y *= 1 - (this.friction * elapsed); //retard the speed for gameplay reasons    
+//   }
+  // if (!this.leftBooster && !this.rightBooster) {
+  //   this.rotation_speed *= 1 - (this.turning_friction * elapsed); //retard the rotation for gameplay reasons    
+  // }
 }
 Ship.prototype.update = function(elapsed) {
   this.apply_torque(this.torque * (this.leftBooster - this.rightBooster) * elapsed);
@@ -541,7 +546,7 @@ Ship.prototype.update = function(elapsed) {
   }
   if(this.reload_in > 0) this.reload_in -= Math.min(elapsed, this.reload_in);
   if(this.shoot_in > 0) this.shoot_in -= Math.min(elapsed, this.shoot_in);
-  this.apply_friction();
+  this.apply_friction(elapsed);
   Mass.prototype.update.apply(this, arguments);
 }
 Ship.prototype.launch_position = function() {
